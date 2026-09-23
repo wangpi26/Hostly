@@ -902,8 +902,10 @@ function startResizeListener() {
 
 async function saveWindowConfig(mode, w, h) {
     try {
-        // Ensure w, h are numbers
-        await invoke('save_window_config', { mode, width: parseFloat(w), height: parseFloat(h) });
+        const width = parseFloat(w);
+        const height = parseFloat(h);
+        if (!(width > 0 && height > 0)) return;
+        await invoke('save_window_config', { mode, width, height });
     } catch(e) { console.error(e); }
 }
 
@@ -940,10 +942,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     await initSidebarWidth();
     await loadData();
     selectProfile('system');
-    // Show window only after everything is ready to avoid flash
-    setTimeout(() => {
-        invoke('show_main_window');
-    }, 50);
 });
 
 // Sidebar Resizing

@@ -30,14 +30,11 @@ pub fn run() {
             let ctx = storage::Context::Tauri(&app.handle());
             if let Ok(config) = storage::load_config_internal(&ctx) {
                 if let (Some(w), Some(h)) = (config.window_width, config.window_height) {
-                     let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: w, height: h }));
+                    if w > 0.0 && h > 0.0 {
+                        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: w, height: h }));
+                    }
                 }
             }
-            
-            // Show window after setup to prevent flashing/resizing jitter
-            // create generic show_Window to calling from frontend
-            // window.show().unwrap();
-            // window.set_focus().unwrap();
             
             // Background Scheduler
             let handle = app.handle().clone();
@@ -78,14 +75,24 @@ pub fn run() {
             storage::set_theme,
             storage::save_window_config,
             storage::save_sidebar_config,
-            show_main_window,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
-}
-
-#[tauri::command]
-fn show_main_window(window: tauri::Window) {
-    window.show().unwrap();
-    window.set_focus().unwrap();
+        .build(tauri::generate_context!())
+        .expect("构建 Tauri 应用失败")
+        .run(|app, event| {
+            let mut should_show = matches!(&event, tauri::RunEvent::Ready);
+            #[cfg(target_os = "macos")]
+            {
+                should_show |= matches!(&event, tauri::RunEvent::Reopen { has_visible_windows: false, .. });
+            }
+            if should_show {
+                let window = app.get_webview_window("main").or_else(|| {
+                    let config = app.config().app.windows.first()?;
+                    tauri::WebviewWindowBuilder::from_config(app, config).ok()?.build().ok()
+                });
+                if let Some(window) = window {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+        });
 }

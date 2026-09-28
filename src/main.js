@@ -773,6 +773,13 @@ const githubLink = document.getElementById('github-link');
 
 // Event Listeners
 saveBtn.onclick = saveCurrent;
+// Cmd/Ctrl+S 快捷保存, 与保存按钮行为一致, 按钮隐藏时不触发
+document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (!saveBtn.classList.contains('hidden')) saveCurrent();
+    }
+});
 renameBtn.onclick = editProfile; // renamed function
 systemEditBtn.onclick = toggleSystemEdit;
 addBtn.onclick = () => showPrompt('新建配置', '', createProfile);
